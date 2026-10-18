@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🎙️ Myanmar TTS Studio"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="မြန်မာအမည်များဖြင့် Voice ရွေးချယ်ပြီး MP3 Audio နှင့် SRT Subtitle ကို တစ်ခါတည်း ထုတ်ယူပါ။"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Voice Character"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/voiceSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Script"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/scriptInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="8"
+            android:gravity="top"
+            android:hint="အသံထုတ်လိုသော စာသားကို ဒီနေရာမှာ ထည့်ပါ..."
+            android:inputType="textMultiLine"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/speedLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="အသံ Speed: +30%"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/speedSeek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/generateBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🎙️ Audio + SRT ထုတ်မယ်"
+            android:layout_marginBottom="12dp" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="အသင့်ဖြစ်ပါပြီ။"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/playBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="▶️ ဖွင့်မယ်"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/shareAudioBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="MP3 Share"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/shareSrtBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="SRT Share"
+                android:visibility="gone" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
