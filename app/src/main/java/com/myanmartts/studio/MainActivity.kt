@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
     private lateinit var playBtn: Button
+    private lateinit var durationText: TextView
     private lateinit var downloadAudioBtn: Button
     private lateinit var downloadSrtBtn: Button
 
@@ -56,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         statusText = findViewById(R.id.statusText)
         playBtn = findViewById(R.id.playBtn)
+        durationText = findViewById(R.id.durationText)
         downloadAudioBtn = findViewById(R.id.downloadAudioBtn)
         downloadSrtBtn = findViewById(R.id.downloadSrtBtn)
 
@@ -228,6 +230,8 @@ class MainActivity : AppCompatActivity() {
                         "အောင်မြင်ပါသည်!\nVoice: $label\nSpeed: $rate\n" +
                             "Script: ${script.length} characters\nAudio chunks: ${chunks.size}\nSRT lines: ${subtitleTexts.size}"
                     playBtn.visibility = View.VISIBLE
+                    durationText.text = "⏱️ ${formatDuration(durationMs)}"
+                    durationText.visibility = View.VISIBLE
                     downloadAudioBtn.visibility = View.VISIBLE
                     downloadSrtBtn.visibility = View.VISIBLE
                     setBusy(false)
@@ -326,12 +330,10 @@ class MainActivity : AppCompatActivity() {
                 put(MediaStore.MediaColumns.MIME_TYPE, mime)
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
             }
-            val collection = if (mime.startsWith("audio")) {
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-            } else {
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI
-            }
-            val uri = contentResolver.insert(collection, values)
+            // NOTE: the Downloads collection accepts any file type; the Audio
+            // collection rejects RELATIVE_PATH=Download ("Primary directory
+            // Download not allowed"), so use Downloads for both MP3 and SRT.
+            val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: throw Exception("MediaStore ထဲ ထည့်၍မရပါ။")
             contentResolver.openOutputStream(uri)?.use { out ->
                 FileInputStream(src).use { inp -> inp.copyTo(out) }
@@ -344,6 +346,14 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Download မရပါ: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun formatDuration(ms: Long): String {
+        val totalSec = ms / 1000
+        val h = totalSec / 3600
+        val m = (totalSec % 3600) / 60
+        val s = totalSec % 60
+        return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
     }
 
     override fun onDestroy() {
