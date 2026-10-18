@@ -1,9 +1,11 @@
 package com.myanmartts.studio
 
-import android.content.Intent
+import android.content.ContentValues
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -14,14 +16,15 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var voiceSpinner: Spinner
+    private lateinit var previewBtn: Button
     private lateinit var scriptInput: EditText
     private lateinit var speedSeek: SeekBar
     private lateinit var speedLabel: TextView
@@ -29,8 +32,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
     private lateinit var playBtn: Button
-    private lateinit var shareAudioBtn: Button
-    private lateinit var shareSrtBtn: Button
+    private lateinit var downloadAudioBtn: Button
+    private lateinit var downloadSrtBtn: Button
 
     private var voiceMap: LinkedHashMap<String, String> = linkedMapOf()
     private var speedPercent: Int = TtsLogic.DEFAULT_SPEED
@@ -45,6 +48,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         voiceSpinner = findViewById(R.id.voiceSpinner)
+        previewBtn = findViewById(R.id.previewBtn)
         scriptInput = findViewById(R.id.scriptInput)
         speedSeek = findViewById(R.id.speedSeek)
         speedLabel = findViewById(R.id.speedLabel)
@@ -52,8 +56,8 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         statusText = findViewById(R.id.statusText)
         playBtn = findViewById(R.id.playBtn)
-        shareAudioBtn = findViewById(R.id.shareAudioBtn)
-        shareSrtBtn = findViewById(R.id.shareSrtBtn)
+        downloadAudioBtn = findViewById(R.id.downloadAudioBtn)
+        downloadSrtBtn = findViewById(R.id.downloadSrtBtn)
 
         speedSeek.max = 150
         speedSeek.progress = TtsLogic.DEFAULT_SPEED + 50
@@ -68,9 +72,10 @@ class MainActivity : AppCompatActivity() {
         })
 
         generateBtn.setOnClickListener { generate() }
+        previewBtn.setOnClickListener { previewVoice() }
         playBtn.setOnClickListener { togglePlay() }
-        shareAudioBtn.setOnClickListener { shareFile(lastAudioFile, "audio/mpeg") }
-        shareSrtBtn.setOnClickListener { shareFile(lastSrtFile, "text/plain") }
+        downloadAudioBtn.setOnClickListener { downloadFile(lastAudioFile, "audio/mpeg") }
+        downloadSrtBtn.setOnClickListener { downloadFile(lastSrtFile, "text/plain") }
 
         loadVoices()
     }
@@ -104,6 +109,42 @@ class MainActivity : AppCompatActivity() {
                 val idx = labels.indexOf(defaultLabel)
                 if (idx >= 0) voiceSpinner.setSelection(idx)
                 statusText.text = "Voice ${labels.size} ခု အသင့်ဖြစ်ပါပြီ။"
+            }
+        }
+    }
+
+    // ----------------------------------------------------------
+    // Voice preview (short sample)
+    // ----------------------------------------------------------
+
+    private fun previewVoice() {
+        val label = voiceSpinner.selectedItem as? String
+        val voiceId = label?.let { voiceMap[it] }
+        if (voiceId == null) {
+            Toast.makeText(this, "Voice ကို ပြန်ရွေးပေးပါ။", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val rate = TtsLogic.speedToRate(speedPercent)
+        setBusy(true)
+        stopPlayback()
+        worker.execute {
+            try {
+                val sample = "မင်္ဂလာပါ။ ကျွန်တော်က $label ပါ။ ဒါက အသံနမူနာ ဖြစ်ပါတယ်။"
+                runOnUiThread { statusText.text = "အသံနမူနာ ထုတ်နေသည်..." }
+                val mp3 = client.synthesize(sample, voiceId, rate)
+                if (mp3.size < 100) throw Exception("Edge TTS က အသံဖိုင်အလွတ် ပြန်ပေးထားသည်။")
+                val previewFile = File(cacheDir, "preview.mp3")
+                previewFile.writeBytes(mp3)
+                runOnUiThread {
+                    statusText.text = "အသင့်ဖြစ်ပါပြီ။"
+                    setBusy(false)
+                    playFile(previewFile)
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    statusText.text = "နမူနာထုတ်၍မရပါ: ${e.message?.take(200)}"
+                    setBusy(false)
+                }
             }
         }
     }
@@ -187,8 +228,8 @@ class MainActivity : AppCompatActivity() {
                         "အောင်မြင်ပါသည်!\nVoice: $label\nSpeed: $rate\n" +
                             "Script: ${script.length} characters\nAudio chunks: ${chunks.size}\nSRT lines: ${subtitleTexts.size}"
                     playBtn.visibility = View.VISIBLE
-                    shareAudioBtn.visibility = View.VISIBLE
-                    shareSrtBtn.visibility = View.VISIBLE
+                    downloadAudioBtn.visibility = View.VISIBLE
+                    downloadSrtBtn.visibility = View.VISIBLE
                     setBusy(false)
                 }
             } catch (e: Exception) {
@@ -214,6 +255,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setBusy(busy: Boolean) {
         generateBtn.isEnabled = !busy
+        previewBtn.isEnabled = !busy
         voiceSpinner.isEnabled = !busy
         scriptInput.isEnabled = !busy
         speedSeek.isEnabled = !busy
@@ -222,7 +264,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ----------------------------------------------------------
-    // Playback + share
+    // Playback + download
     // ----------------------------------------------------------
 
     private fun togglePlay() {
@@ -238,6 +280,11 @@ class MainActivity : AppCompatActivity() {
             playBtn.text = "⏸️ ရပ်မယ်"
             return
         }
+        playFile(file)
+    }
+
+    private fun playFile(file: File) {
+        stopPlayback()
         try {
             val mp = MediaPlayer()
             mp.setDataSource(file.absolutePath)
@@ -266,18 +313,37 @@ class MainActivity : AppCompatActivity() {
         if (::playBtn.isInitialized) playBtn.text = "▶️ ဖွင့်မယ်"
     }
 
-    private fun shareFile(file: File?, mime: String) {
-        if (file == null || !file.exists()) {
+    /** Save the generated file into the phone's Downloads folder (MediaStore, no permission needed). */
+    private fun downloadFile(src: File?, mime: String) {
+        if (src == null || !src.exists()) {
             Toast.makeText(this, "ဖိုင်မရှိသေးပါ။", Toast.LENGTH_SHORT).show()
             return
         }
-        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = mime
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            val displayName = src.name
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mime)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            val collection = if (mime.startsWith("audio")) {
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            } else {
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            }
+            val uri = contentResolver.insert(collection, values)
+                ?: throw Exception("MediaStore ထဲ ထည့်၍မရပါ။")
+            contentResolver.openOutputStream(uri)?.use { out ->
+                FileInputStream(src).use { inp -> inp.copyTo(out) }
+            } ?: throw Exception("ဖိုင်ရေး၍မရပါ။")
+            Toast.makeText(
+                this,
+                "Downloads folder ထဲ သိမ်းပြီးပါပြီ:\n$displayName",
+                Toast.LENGTH_LONG
+            ).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Download မရပါ: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-        startActivity(Intent.createChooser(intent, "မျှဝေမယ်"))
     }
 
     override fun onDestroy() {

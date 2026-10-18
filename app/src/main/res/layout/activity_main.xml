@@ -33,7 +33,13 @@
         <Spinner
             android:id="@+id/voiceSpinner"
             android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/previewBtn"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="🔊 အသံနမူနာ နားထောင်မယ်"
             android:layout_marginBottom="12dp" />
 
         <TextView
@@ -102,19 +108,19 @@
                 android:visibility="gone" />
 
             <Button
-                android:id="@+id/shareAudioBtn"
+                android:id="@+id/downloadAudioBtn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="MP3 Share"
+                android:text="⬇️ MP3 Download"
                 android:visibility="gone" />
 
             <Button
-                android:id="@+id/shareSrtBtn"
+                android:id="@+id/downloadSrtBtn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="SRT Share"
+                android:text="⬇️ SRT Download"
                 android:visibility="gone" />
         </LinearLayout>
 
