@@ -1,6 +1,10 @@
 # Builds the debug APK automatically whenever code is pushed.
 # The APK can then be downloaded from the Actions tab (Artifacts section),
 # straight from a phone browser — no computer needed.
+#
+# Note: GitHub-hosted ubuntu runners already ship the Android SDK, so we
+# install the exact platform/build-tools we need with sdkmanager instead
+# of using a third-party setup action.
 name: Build Debug APK
 
 on:
@@ -21,13 +25,15 @@ jobs:
           java-version: 17
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
+
+      - name: Install Android SDK packages
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Build debug APK
         run: gradle :app:assembleDebug
