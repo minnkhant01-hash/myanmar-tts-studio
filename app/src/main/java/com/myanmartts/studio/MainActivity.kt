@@ -5,6 +5,8 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.View
 import android.widget.ArrayAdapter
@@ -31,8 +33,27 @@ class MainActivity : AppCompatActivity() {
     private lateinit var generateBtn: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
-    private lateinit var playBtn: Button
-    private lateinit var durationText: TextView
+    private lateinit var playerPanel: android.view.View
+    private lateinit var playerSeek: SeekBar
+    private lateinit var playerCurrent: TextView
+    private lateinit var playerTotal: TextView
+    private lateinit var playerPlayPauseBtn: Button
+    private var playerFile: File? = null
+    private val uiHandler = Handler(Looper.getMainLooper())
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            val mp = mediaPlayer
+            if (mp != null && mp.isPlaying) {
+                try {
+                    val pos = mp.currentPosition
+                    playerSeek.progress = pos
+                    playerCurrent.text = formatDuration(pos.toLong())
+                } catch (_: Exception) {
+                }
+                uiHandler.postDelayed(this, 500)
+            }
+        }
+    }
     private lateinit var downloadAudioBtn: Button
     private lateinit var downloadSrtBtn: Button
 
@@ -56,8 +77,11 @@ class MainActivity : AppCompatActivity() {
         generateBtn = findViewById(R.id.generateBtn)
         progressBar = findViewById(R.id.progressBar)
         statusText = findViewById(R.id.statusText)
-        playBtn = findViewById(R.id.playBtn)
-        durationText = findViewById(R.id.durationText)
+        playerPanel = findViewById(R.id.playerPanel)
+        playerSeek = findViewById(R.id.playerSeek)
+        playerCurrent = findViewById(R.id.playerCurrent)
+        playerTotal = findViewById(R.id.playerTotal)
+        playerPlayPauseBtn = findViewById(R.id.playerPlayPauseBtn)
         downloadAudioBtn = findViewById(R.id.downloadAudioBtn)
         downloadSrtBtn = findViewById(R.id.downloadSrtBtn)
 
@@ -75,9 +99,26 @@ class MainActivity : AppCompatActivity() {
 
         generateBtn.setOnClickListener { generate() }
         previewBtn.setOnClickListener { previewVoice() }
-        playBtn.setOnClickListener { togglePlay() }
+        playerPlayPauseBtn.setOnClickListener { togglePlayPause() }
         downloadAudioBtn.setOnClickListener { downloadFile(lastAudioFile, "audio/mpeg") }
         downloadSrtBtn.setOnClickListener { downloadFile(lastSrtFile, "text/plain") }
+
+        playerSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val mp = mediaPlayer
+                    if (mp != null) {
+                        try {
+                            mp.seekTo(progress)
+                            playerCurrent.text = formatDuration(progress.toLong())
+                        } catch (_: Exception) {
+                        }
+                    }
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
 
         loadVoices()
     }
@@ -229,9 +270,7 @@ class MainActivity : AppCompatActivity() {
                     statusText.text =
                         "အောင်မြင်ပါသည်!\nVoice: $label\nSpeed: $rate\n" +
                             "Script: ${script.length} characters\nAudio chunks: ${chunks.size}\nSRT lines: ${subtitleTexts.size}"
-                    playBtn.visibility = View.VISIBLE
-                    durationText.text = "⏱️ ${formatDuration(durationMs)}"
-                    durationText.visibility = View.VISIBLE
+                    setupPlayer(audioFile, durationMs)
                     downloadAudioBtn.visibility = View.VISIBLE
                     downloadSrtBtn.visibility = View.VISIBLE
                     setBusy(false)
@@ -268,44 +307,80 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ----------------------------------------------------------
-    // Playback + download
+    // Audio player (seek bar + time + play/pause)
     // ----------------------------------------------------------
 
-    private fun togglePlay() {
-        val file = lastAudioFile ?: return
-        val player = mediaPlayer
-        if (player != null && player.isPlaying) {
-            player.pause()
-            playBtn.text = "▶️ ဆက်ဖွင့်မယ်"
-            return
-        }
-        if (player != null) {
-            player.start()
-            playBtn.text = "⏸️ ရပ်မယ်"
-            return
-        }
-        playFile(file)
+    /** Show the player panel for a file without starting playback. */
+    private fun setupPlayer(file: File, durationMs: Long) {
+        stopPlayback()
+        playerFile = file
+        val dur = durationMs.coerceAtLeast(1L)
+        playerSeek.max = dur.toInt().coerceAtLeast(1)
+        playerSeek.progress = 0
+        playerCurrent.text = formatDuration(0)
+        playerTotal.text = "⏱️ ${formatDuration(dur)}"
+        playerPlayPauseBtn.text = "▶️ ဖွင့်မယ်"
+        playerPanel.visibility = View.VISIBLE
     }
 
+    /** Set up the player and start playing immediately. */
     private fun playFile(file: File) {
+        setupPlayer(file, readDurationMs(file))
+        startPlayback()
+    }
+
+    private fun startPlayback() {
+        val file = playerFile ?: return
         stopPlayback()
         try {
             val mp = MediaPlayer()
             mp.setDataSource(file.absolutePath)
             mp.prepare()
-            mp.setOnCompletionListener {
-                playBtn.text = "▶️ ဖွင့်မယ်"
-                stopPlayback()
-            }
+            val dur = mp.duration.coerceAtLeast(1)
+            playerSeek.max = dur
+            playerTotal.text = "⏱️ ${formatDuration(dur.toLong())}"
+            mp.setOnCompletionListener { runOnUiThread { onPlaybackComplete() } }
             mp.start()
             mediaPlayer = mp
-            playBtn.text = "⏸️ ရပ်မယ်"
+            playerPlayPauseBtn.text = "⏸️ ရပ်မယ်"
+            startProgressUpdates()
         } catch (e: Exception) {
             Toast.makeText(this, "ဖွင့်၍မရပါ: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun togglePlayPause() {
+        val mp = mediaPlayer
+        when {
+            mp != null && mp.isPlaying -> {
+                mp.pause()
+                playerPlayPauseBtn.text = "▶️ ဆက်ဖွင့်မယ်"
+                uiHandler.removeCallbacks(progressRunnable)
+            }
+            mp != null -> {
+                mp.start()
+                playerPlayPauseBtn.text = "⏸️ ရပ်မယ်"
+                startProgressUpdates()
+            }
+            else -> startPlayback()
+        }
+    }
+
+    private fun onPlaybackComplete() {
+        uiHandler.removeCallbacks(progressRunnable)
+        playerSeek.progress = 0
+        playerCurrent.text = formatDuration(0)
+        playerPlayPauseBtn.text = "▶️ ဖွင့်မယ်"
+        stopPlayback()
+    }
+
+    private fun startProgressUpdates() {
+        uiHandler.removeCallbacks(progressRunnable)
+        uiHandler.post(progressRunnable)
+    }
+
     private fun stopPlayback() {
+        uiHandler.removeCallbacks(progressRunnable)
         mediaPlayer?.let {
             try {
                 if (it.isPlaying) it.stop()
@@ -314,7 +389,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         mediaPlayer = null
-        if (::playBtn.isInitialized) playBtn.text = "▶️ ဖွင့်မယ်"
+        if (::playerPlayPauseBtn.isInitialized) playerPlayPauseBtn.text = "▶️ ဖွင့်မယ်"
     }
 
     /** Save the generated file into the phone's Downloads folder (MediaStore, no permission needed). */
