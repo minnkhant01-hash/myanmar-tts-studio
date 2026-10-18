@@ -119,6 +119,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val label = voiceSpinner.selectedItem as? String
+        if (label == null) {
+            Toast.makeText(this, "Voice ကို ပြန်ရွေးပေးပါ။", Toast.LENGTH_SHORT).show()
+            return
+        }
         val voiceId = voiceMap[label]
         if (voiceId == null) {
             Toast.makeText(this, "Voice ကို ပြန်ရွေးပေးပါ။", Toast.LENGTH_SHORT).show()

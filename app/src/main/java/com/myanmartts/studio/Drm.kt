@@ -267,8 +267,8 @@ object Drm {
     private fun tokenHash(data: ByteArray): Pair<String, String> {
         val digest = sha256Digest(data)
         val (a, b) = cs64Digest(data, digest)
-        val cs64 = (a.toLeBytes() + b.toLeBytes()).joinToString("") { "%02X".format(it) }
-        val sha = digest.joinToString("") { "%02X".format(it) }
+        val cs64 = (a.toLeBytes() + b.toLeBytes()).joinToString("") { "%02X".format(it.toInt() and 0xFF) }
+        val sha = digest.joinToString("") { "%02X".format(it.toInt() and 0xFF) }
         return Pair(cs64, sha)
     }
 
@@ -292,6 +292,6 @@ object Drm {
     fun generateMuid(): String {
         val bytes = ByteArray(16)
         SecureRandom().nextBytes(bytes)
-        return bytes.joinToString("") { "%02X".format(it) }
+        return bytes.joinToString("") { "%02X".format(it.toInt() and 0xFF) }
     }
 }

@@ -85,16 +85,16 @@ object TtsLogic {
         var aliasIndex = 0
         for (v in voices) {
             if (v.shortName.isEmpty()) continue
-            var label: String? = VOICE_DISPLAY_NAMES[v.shortName]
-            if (label == null) {
+            var label: String = VOICE_DISPLAY_NAMES[v.shortName] ?: run {
+                var alias: String? = null
                 while (aliasIndex < VOICE_ALIAS_NAMES.size) {
                     val candidate = VOICE_ALIAS_NAMES[aliasIndex++]
                     if (candidate !in used) {
-                        label = candidate
+                        alias = candidate
                         break
                     }
                 }
-                if (label == null) label = "အသံဇာတ်ကောင် ${result.size + 1}"
+                alias ?: "အသံဇာတ်ကောင် ${result.size + 1}"
             }
             val base = label
             var suffix = 2
