@@ -24,11 +24,15 @@ object TtsLogic {
         "my-MM-ThihaNeural" to "ပြေတီဦး",
     )
 
+    // NOTE (2026-10-22, per user): four labels were gender-mismatched — a male
+    // name sat on a female voice and vice versa. Swapped ပိုင်တံခွန် <->
+    // အိန္ဒြာကျော်ဇင်, and replaced နေမင်း -> ချစ်စနိုးဦး and
+    // ကျော်ကျော်ဗို -> ရတနာမိုင် so each label's gender matches its voice.
     val VOICE_ALIAS_NAMES = listOf(
-        "အကယ်ဒမီမင်းမော်ကွန်း", "ပိုင်တံခွန်", "ရဲတိုက်", "မြင့်မြတ်",
-        "နေမင်း", "အောင်ရဲလင်း", "ကျော်ကျော်ဗို", "လွင်မိုး",
+        "အကယ်ဒမီမင်းမော်ကွန်း", "အိန္ဒြာကျော်ဇင်", "ရဲတိုက်", "မြင့်မြတ်",
+        "ချစ်စနိုးဦး", "အောင်ရဲလင်း", "ရတနာမိုင်", "လွင်မိုး",
         "ပြေတီဦး", "နေတိုး", "ဝတ်မှုန်ရွှေရည်", "ဖွေးဖွေး",
-        "အိန္ဒြာကျော်ဇင်", "သက်မွန်မြင့်", "မိုးဟေကို", "ရွှေမှုံရတီ",
+        "ပိုင်တံခွန်", "သက်မွန်မြင့်", "မိုးဟေကို", "ရွှေမှုံရတီ",
         "သင်ဇာဝင့်ကျော်", "ပိုင်ဖြိုးသု", "ခင်ဝင့်ဝါ", "အေးမြတ်သူ",
         "အိချောပို", "နန်းဆုဦး", "အေးဝတ်ရည်သောင်း", "ဆုပန်ထွာ",
         "မေမြင့်မိုရ်", "ဝါဆိုမိုးဦး", "သံသာမိုးသိမ့်", "မြတ်နိုးအေး",
@@ -78,9 +82,11 @@ object TtsLogic {
         )
     }
 
-    /** Myanmar display label -> voice id, without ever showing raw voice ids. */
-    fun buildVoiceDisplayMap(voices: List<EdgeTtsClient.Voice>): LinkedHashMap<String, String> {
-        val result = LinkedHashMap<String, String>()
+    data class VoiceDisplayInfo(val label: String, val voiceId: String, val gender: String)
+
+    /** Display label + voice id + gender for each voice, in display order. */
+    fun buildVoiceDisplayInfos(voices: List<EdgeTtsClient.Voice>): List<VoiceDisplayInfo> {
+        val result = mutableListOf<VoiceDisplayInfo>()
         val used = mutableSetOf<String>()
         var aliasIndex = 0
         for (v in voices) {
@@ -103,10 +109,24 @@ object TtsLogic {
                 suffix++
             }
             used.add(label)
-            result[label] = v.shortName
+            result.add(VoiceDisplayInfo(label, v.shortName, v.gender))
         }
         return result
     }
+
+    /** Myanmar display label -> voice id, without ever showing raw voice ids. */
+    fun buildVoiceDisplayMap(voices: List<EdgeTtsClient.Voice>): LinkedHashMap<String, String> {
+        val result = LinkedHashMap<String, String>()
+        for (info in buildVoiceDisplayInfos(voices)) result[info.label] = info.voiceId
+        return result
+    }
+
+    /** First-person pronoun for the preview sample: female voices say ကျွန်မ, male voices ကျွန်တော်. */
+    fun previewPronoun(gender: String?): String =
+        if (gender.equals("Female", ignoreCase = true)) "ကျွန်မ" else "ကျွန်တော်"
+
+    fun previewSample(label: String, gender: String?): String =
+        "မင်္ဂလာပါ။ ${previewPronoun(gender)}က $label ပါ။ ဒါက အသံနမူနာ ဖြစ်ပါတယ်။"
 
     // ----------------------------------------------------------
     // Script processing

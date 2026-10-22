@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/app_background"
     android:fillViewport="true">
 
     <LinearLayout
@@ -10,115 +12,184 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
+        <!-- Header -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🎙️ Myanmar TTS Studio"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+            android:background="@drawable/bg_header"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
 
-        <TextView
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🎙️ Myanmar TTS Studio"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="မြန်မာအမည်များဖြင့် Voice ရွေးချယ်ပြီး MP3 Audio နှင့် SRT Subtitle ကို တစ်ခါတည်း ထုတ်ယူပါ။"
+                android:textColor="@color/white_70"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Voice card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="မြန်မာအမည်များဖြင့် Voice ရွေးချယ်ပြီး MP3 Audio နှင့် SRT Subtitle ကို တစ်ခါတည်း ထုတ်ယူပါ။"
-            android:layout_marginBottom="12dp" />
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Voice Character"
-            android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎭 Voice Character"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
 
-        <Spinner
-            android:id="@+id/voiceSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            <Spinner
+                android:id="@+id/voiceSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/previewBtn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🔊 အသံနမူနာ နားထောင်မယ်"
-            android:layout_marginBottom="12dp" />
+            <Button
+                android:id="@+id/previewBtn"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="🔊 အသံနမူနာ နားထောင်မယ်"
+                android:textSize="15sp" />
+        </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Script"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/scriptInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minLines="8"
-            android:gravity="top"
-            android:hint="အသံထုတ်လိုသော စာသားကို ဒီနေရာမှာ ထည့်ပါ..."
-            android:inputType="textMultiLine"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:id="@+id/speedLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="အသံ Speed: +30%"
-            android:textStyle="bold" />
-
-        <SeekBar
-            android:id="@+id/speedSeek"
+        <!-- Script card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp" />
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/generateBtn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🎙️ Audio + SRT ထုတ်မယ်"
-            android:layout_marginBottom="12dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📜 Script"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:visibility="gone"
-            android:layout_marginBottom="8dp" />
+            <EditText
+                android:id="@+id/scriptInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_input"
+                android:minLines="8"
+                android:gravity="top"
+                android:hint="အသံထုတ်လိုသော စာသားကို ဒီနေရာမှာ ထည့်ပါ..."
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:inputType="textMultiLine"
+                android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="အသင့်ဖြစ်ပါပြီ။"
-            android:layout_marginBottom="12dp" />
+            <TextView
+                android:id="@+id/speedLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="အသံ Speed: +30%"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
+            <SeekBar
+                android:id="@+id/speedSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:progressTint="@color/primary"
+                android:thumbTint="@color/primary"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/generateBtn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="🎙️ Audio + SRT ထုတ်မယ်"
+                android:textSize="16sp" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:indeterminateTint="@color/primary"
+                android:progressTint="@color/primary"
+                android:visibility="gone"
+                android:layout_marginTop="12dp" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="အသင့်ဖြစ်ပါပြီ။"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="10dp" />
+        </LinearLayout>
+
+        <!-- Player card -->
         <LinearLayout
             android:id="@+id/playerPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/bg_player"
             android:orientation="vertical"
             android:visibility="gone"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            android:padding="18dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎧 Now Playing"
+                android:textColor="@color/white_70"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
 
             <SeekBar
                 android:id="@+id/playerSeek"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:progressTint="@color/accent"
+                android:thumbTint="@color/accent"
+                android:progressBackgroundTint="@color/white_70" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
                 <TextView
                     android:id="@+id/playerCurrent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0:00"
-                    android:textSize="14sp" />
+                    android:textColor="@color/white"
+                    android:textSize="13sp" />
 
                 <Space
                     android:layout_width="0dp"
@@ -130,17 +201,71 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="⏱️ 0:00"
-                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <Button
-                android:id="@+id/playerPlayPauseBtn"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="▶️ ဖွင့်မယ်" />
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/playerSkipBackBtn"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    android:background="@drawable/bg_skip_round"
+                    android:backgroundTint="@null"
+                    android:text="⏪"
+                    android:textSize="18sp"
+                    app:insetLeft="0dp"
+                    app:insetTop="0dp"
+                    app:insetRight="0dp"
+                    app:insetBottom="0dp" />
+
+                <Button
+                    android:id="@+id/playerPlayPauseBtn"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    android:background="@drawable/bg_play_round"
+                    android:backgroundTint="@null"
+                    android:text="▶"
+                    android:textColor="@color/primary_dark"
+                    android:textSize="28sp"
+                    app:insetLeft="0dp"
+                    app:insetTop="0dp"
+                    app:insetRight="0dp"
+                    app:insetBottom="0dp" />
+
+                <Button
+                    android:id="@+id/playerSkipForwardBtn"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    android:background="@drawable/bg_skip_round"
+                    android:backgroundTint="@null"
+                    android:text="⏩"
+                    android:textSize="18sp"
+                    app:insetLeft="0dp"
+                    app:insetTop="0dp"
+                    app:insetRight="0dp"
+                    app:insetBottom="0dp" />
+            </LinearLayout>
         </LinearLayout>
 
+        <!-- Downloads -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -148,17 +273,21 @@
 
             <Button
                 android:id="@+id/downloadAudioBtn"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_weight="1"
+                android:layout_marginEnd="6dp"
                 android:text="⬇️ MP3 Download"
                 android:visibility="gone" />
 
             <Button
                 android:id="@+id/downloadSrtBtn"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_weight="1"
+                android:layout_marginStart="6dp"
                 android:text="⬇️ SRT Download"
                 android:visibility="gone" />
         </LinearLayout>

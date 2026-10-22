@@ -38,6 +38,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var playerCurrent: TextView
     private lateinit var playerTotal: TextView
     private lateinit var playerPlayPauseBtn: Button
+    private lateinit var playerSkipBackBtn: Button
+    private lateinit var playerSkipForwardBtn: Button
     private var playerFile: File? = null
     private val uiHandler = Handler(Looper.getMainLooper())
     private val progressRunnable = object : Runnable {
@@ -58,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var downloadSrtBtn: Button
 
     private var voiceMap: LinkedHashMap<String, String> = linkedMapOf()
+    private var voiceGenderMap: Map<String, String> = emptyMap()
     private var speedPercent: Int = TtsLogic.DEFAULT_SPEED
     private var lastAudioFile: File? = null
     private var lastSrtFile: File? = null
@@ -82,6 +85,8 @@ class MainActivity : AppCompatActivity() {
         playerCurrent = findViewById(R.id.playerCurrent)
         playerTotal = findViewById(R.id.playerTotal)
         playerPlayPauseBtn = findViewById(R.id.playerPlayPauseBtn)
+        playerSkipBackBtn = findViewById(R.id.playerSkipBackBtn)
+        playerSkipForwardBtn = findViewById(R.id.playerSkipForwardBtn)
         downloadAudioBtn = findViewById(R.id.downloadAudioBtn)
         downloadSrtBtn = findViewById(R.id.downloadSrtBtn)
 
@@ -100,6 +105,8 @@ class MainActivity : AppCompatActivity() {
         generateBtn.setOnClickListener { generate() }
         previewBtn.setOnClickListener { previewVoice() }
         playerPlayPauseBtn.setOnClickListener { togglePlayPause() }
+        playerSkipBackBtn.setOnClickListener { skipBy(-10_000) }
+        playerSkipForwardBtn.setOnClickListener { skipBy(10_000) }
         downloadAudioBtn.setOnClickListener { downloadFile(lastAudioFile, "audio/mpeg") }
         downloadSrtBtn.setOnClickListener { downloadFile(lastSrtFile, "text/plain") }
 
@@ -140,7 +147,11 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 TtsLogic.selectVoices(TtsLogic.fallbackVoices())
             }
-            voiceMap = TtsLogic.buildVoiceDisplayMap(voices)
+            val infos = TtsLogic.buildVoiceDisplayInfos(voices)
+            voiceMap = LinkedHashMap<String, String>().apply {
+                for (info in infos) put(info.label, info.voiceId)
+            }
+            voiceGenderMap = infos.associate { it.label to it.gender }
             runOnUiThread {
                 val labels = voiceMap.keys.toList()
                 voiceSpinner.adapter = ArrayAdapter(
@@ -172,7 +183,7 @@ class MainActivity : AppCompatActivity() {
         stopPlayback()
         worker.execute {
             try {
-                val sample = "မင်္ဂလာပါ။ ကျွန်တော်က $label ပါ။ ဒါက အသံနမူနာ ဖြစ်ပါတယ်။"
+                val sample = TtsLogic.previewSample(label, voiceGenderMap[label])
                 runOnUiThread { statusText.text = "အသံနမူနာ ထုတ်နေသည်..." }
                 val mp3 = client.synthesize(sample, voiceId, rate)
                 if (mp3.size < 100) throw Exception("Edge TTS က အသံဖိုင်အလွတ် ပြန်ပေးထားသည်။")
@@ -319,7 +330,7 @@ class MainActivity : AppCompatActivity() {
         playerSeek.progress = 0
         playerCurrent.text = formatDuration(0)
         playerTotal.text = "⏱️ ${formatDuration(dur)}"
-        playerPlayPauseBtn.text = "▶️ ဖွင့်မယ်"
+        playerPlayPauseBtn.text = "▶"
         playerPanel.visibility = View.VISIBLE
     }
 
@@ -342,7 +353,7 @@ class MainActivity : AppCompatActivity() {
             mp.setOnCompletionListener { runOnUiThread { onPlaybackComplete() } }
             mp.start()
             mediaPlayer = mp
-            playerPlayPauseBtn.text = "⏸️ ရပ်မယ်"
+            playerPlayPauseBtn.text = "⏸"
             startProgressUpdates()
         } catch (e: Exception) {
             Toast.makeText(this, "ဖွင့်၍မရပါ: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -354,15 +365,27 @@ class MainActivity : AppCompatActivity() {
         when {
             mp != null && mp.isPlaying -> {
                 mp.pause()
-                playerPlayPauseBtn.text = "▶️ ဆက်ဖွင့်မယ်"
+                playerPlayPauseBtn.text = "▶"
                 uiHandler.removeCallbacks(progressRunnable)
             }
             mp != null -> {
                 mp.start()
-                playerPlayPauseBtn.text = "⏸️ ရပ်မယ်"
+                playerPlayPauseBtn.text = "⏸"
                 startProgressUpdates()
             }
             else -> startPlayback()
+        }
+    }
+
+    /** Skip forward/backward by [deltaMs] (buttons use 10 seconds), clamped to the track. */
+    private fun skipBy(deltaMs: Int) {
+        val mp = mediaPlayer ?: return
+        try {
+            val target = (mp.currentPosition + deltaMs).coerceIn(0, mp.duration.coerceAtLeast(0))
+            mp.seekTo(target)
+            playerSeek.progress = target
+            playerCurrent.text = formatDuration(target.toLong())
+        } catch (_: Exception) {
         }
     }
 
@@ -370,7 +393,7 @@ class MainActivity : AppCompatActivity() {
         uiHandler.removeCallbacks(progressRunnable)
         playerSeek.progress = 0
         playerCurrent.text = formatDuration(0)
-        playerPlayPauseBtn.text = "▶️ ဖွင့်မယ်"
+        playerPlayPauseBtn.text = "▶"
         stopPlayback()
     }
 
@@ -389,7 +412,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         mediaPlayer = null
-        if (::playerPlayPauseBtn.isInitialized) playerPlayPauseBtn.text = "▶️ ဖွင့်မယ်"
+        if (::playerPlayPauseBtn.isInitialized) playerPlayPauseBtn.text = "▶"
     }
 
     /** Save the generated file into the phone's Downloads folder (MediaStore, no permission needed). */

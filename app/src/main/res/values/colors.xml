@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1E88E5</color>
+    <color name="ic_launcher_background">#4527A0</color>
+    <color name="app_background">#F3F0FA</color>
+    <color name="primary">#5E35B1</color>
+    <color name="primary_dark">#4527A0</color>
+    <color name="primary_light">#EDE7F6</color>
+    <color name="accent">#FF8F00</color>
+    <color name="text_primary">#211A33</color>
+    <color name="text_secondary">#6B6580</color>
+    <color name="card_border">#E3DEF2</color>
+    <color name="input_bg">#FAF8FF</color>
+    <color name="input_border">#D8CFF2</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
 </resources>
