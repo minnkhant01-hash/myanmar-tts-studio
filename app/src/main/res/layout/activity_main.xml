@@ -222,11 +222,7 @@
                     android:background="@drawable/bg_skip_round"
                     android:backgroundTint="@null"
                     android:text="⏪"
-                    android:textSize="18sp"
-                    app:insetLeft="0dp"
-                    app:insetTop="0dp"
-                    app:insetRight="0dp"
-                    app:insetBottom="0dp" />
+                    android:textSize="18sp" />
 
                 <Button
                     android:id="@+id/playerPlayPauseBtn"
@@ -241,11 +237,7 @@
                     android:backgroundTint="@null"
                     android:text="▶"
                     android:textColor="@color/primary_dark"
-                    android:textSize="28sp"
-                    app:insetLeft="0dp"
-                    app:insetTop="0dp"
-                    app:insetRight="0dp"
-                    app:insetBottom="0dp" />
+                    android:textSize="28sp" />
 
                 <Button
                     android:id="@+id/playerSkipForwardBtn"
@@ -257,11 +249,7 @@
                     android:background="@drawable/bg_skip_round"
                     android:backgroundTint="@null"
                     android:text="⏩"
-                    android:textSize="18sp"
-                    app:insetLeft="0dp"
-                    app:insetTop="0dp"
-                    app:insetRight="0dp"
-                    app:insetBottom="0dp" />
+                    android:textSize="18sp" />
             </LinearLayout>
         </LinearLayout>
 
