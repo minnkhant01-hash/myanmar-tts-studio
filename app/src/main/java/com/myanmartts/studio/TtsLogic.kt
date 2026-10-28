@@ -141,41 +141,76 @@ object TtsLogic {
     }
 
     private fun splitLongText(text: String, maxChars: Int = MAX_CHUNK_CHARACTERS): List<String> {
-        val words = text.split(" ").filter { it.isNotEmpty() }
         val chunks = mutableListOf<String>()
-        val current = mutableListOf<String>()
-        var currentLength = 0
-        for (word in words) {
-            val added = word.length + if (current.isNotEmpty()) 1 else 0
-            if (current.isNotEmpty() && currentLength + added > maxChars) {
-                chunks.add(current.joinToString(" "))
+        val current = StringBuilder()
+        fun flush() {
+            if (current.isNotEmpty()) {
+                chunks.add(current.toString())
                 current.clear()
-                current.add(word)
-                currentLength = word.length
-            } else {
-                current.add(word)
-                currentLength += added
             }
         }
-        if (current.isNotEmpty()) chunks.add(current.joinToString(" "))
+        for (word in text.split(" ").filter { it.isNotEmpty() }) {
+            if (word.length > maxChars) {
+                // A single unbroken word longer than the limit: hard-split it
+                // so no chunk exceeds what Edge TTS is sent.
+                flush()
+                var start = 0
+                while (start < word.length) {
+                    val end = minOf(start + maxChars, word.length)
+                    chunks.add(word.substring(start, end))
+                    start = end
+                }
+                continue
+            }
+            val added = word.length + if (current.isNotEmpty()) 1 else 0
+            if (current.isNotEmpty() && current.length + added > maxChars) flush()
+            if (current.isNotEmpty()) current.append(' ')
+            current.append(word)
+        }
+        flush()
         return chunks
     }
 
+    /**
+     * No characters may be lost or added when text is split into chunks.
+     * Whitespace is ignored: chunk boundaries move spaces around, and a
+     * boundary may sit next to punctuation, so comparing whitespace-separated
+     * words used to false-alarm on inputs like "မယ်။”" (a closing quote glued
+     * to the full stop). Comparing the character sequences themselves checks
+     * what actually matters.
+     */
     fun verifyTextIntegrity(original: String, parts: List<String>) {
-        val a = original.split(Regex("\\s+")).filter { it.isNotEmpty() }
-        val b = parts.flatMap { it.split(Regex("\\s+")) }.filter { it.isNotEmpty() }
+        val a = original.filterNot { it.isWhitespace() }
+        val b = parts.joinToString("").filterNot { it.isWhitespace() }
         if (a != b) throw IllegalStateException("စာသားစစ်ဆေးမှု မအောင်မြင်ပါ။ စကားလုံး ပျောက်နေသည်။")
     }
 
-    /** Split after every '။', preserving order and punctuation. */
+    /**
+     * Split after every sentence-ending '။', preserving order and punctuation.
+     *
+     * A '။' only ends a sentence when the next character is whitespace or the
+     * end of the text. This matters for quoted dialogue such as
+     * "…သွားရမယ်။” နောက်တစ်နေ့…" — splitting right at the '။' there would
+     * tear the closing quote off its word ("မယ်။”" -> "မယ်။" + "”") and the
+     * integrity check would (rightly) refuse the result. That is exactly the
+     * error users saw on stories with quoted speech.
+     */
     fun splitForTts(text: String): List<String> {
         val t = text.trim()
         if (t.isEmpty()) return emptyList()
-        val parts = Regex("[^။]*။|[^။]+$", RegexOption.DOT_MATCHES_ALL)
-            .findAll(t)
-            .map { it.value.trim() }
-            .filter { it.isNotEmpty() }
-            .toList()
+        val parts = mutableListOf<String>()
+        val current = StringBuilder()
+        for (i in t.indices) {
+            val c = t[i]
+            current.append(c)
+            if (c == '။' && (i + 1 >= t.length || t[i + 1].isWhitespace())) {
+                val part = current.toString().trim()
+                if (part.isNotEmpty()) parts.add(part)
+                current.clear()
+            }
+        }
+        val tail = current.toString().trim()
+        if (tail.isNotEmpty()) parts.add(tail)
         val chunks = mutableListOf<String>()
         for (part in parts) {
             if (part.length > MAX_CHUNK_CHARACTERS) chunks.addAll(splitLongText(part))
